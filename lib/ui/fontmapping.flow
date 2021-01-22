@@ -43,6 +43,7 @@ export {
 	createWithLang(lang : string, fn : () -> ?) -> ?;
 
 	isCJKLang() -> bool; // is current lang chinese/japanese/korean?
+	isLangCJK(lang : string) -> bool;
 	isChinese(lang : string) -> bool;  // returns true for "zh", "zz" langs
 
 	// Main function for font names mapping. Used by renderForm.
@@ -352,13 +353,17 @@ setLang(lang) {
 		setLangCore(lang);
 }
 
+isLangCJK(lang : string) -> bool {
+	isChinese(lang) || lang == "ja" || lang == "ko" || lang == "ar" || lang == "he" || lang == "yi"
+}
+
 setLangCore(lang0 : string) -> void{
 	lang = toLowerCase(lang0);
 	if (lang != getValue(currentLang)) {
 		if (!cgi) {
 			println("setting language to " + toString(lang));
 		}
-		cjkLang := isChinese(lang) || lang == "ja" || lang == "ko" || lang == "ar" || lang == "he" || lang == "yi";
+		cjkLang := isLangCJK(lang);
 		updateFontMappingFunction(Some(lang));
 		next(currentLang, lang);
 		setApplicationLanguage(lang);
@@ -440,7 +445,7 @@ cjkFontMappingFn(family : string, size : double) -> Pair<string, double> {
 		Pair(makeFontSloped(font1), makeFontSloped(font2)),
 		Pair(makeFontSloped(makeFontMedium(font1)), makeFontSloped(makeFontBold(font2))),
 	]};
-	nativeFontParams : Maybe<FontParams> = 
+	nativeFontParams : Maybe<FontParams> =
 		if (lang == "ja")
 			Some(japaneseFontParams)
 		else if (lang == "ko")

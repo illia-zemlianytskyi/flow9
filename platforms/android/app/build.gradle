@@ -109,7 +109,7 @@ dependencies {
         implementation 'com.android.support:support-compat:26.0.2'
     }
     if (linkGooglePlay) {
-		implementation platform('com.google.firebase:firebase-bom:27.0.0')
+		implementation 'com.google.firebase:firebase-bom:27.0.0'
         implementation 'com.google.firebase:firebase-messaging'
         implementation 'com.google.android.gms:play-services-location'
         implementation 'com.google.android.gms:play-services-gcm'

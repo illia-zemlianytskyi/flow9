@@ -111,7 +111,7 @@ dependencies {
     if (linkGooglePlay) {
         implementation 'com.google.firebase:firebase-messaging:18.0.0'
         implementation 'com.google.android.gms:play-services-location:18.0.0'
-        implementation 'com.google.android.gms:play-services-gcm:18.0.0'
+        implementation 'com.google.android.gms:play-services-gcm:17.0.0'
         implementation 'com.android.support:multidex:1.0.3'
         implementation 'com.android.support:multidex-instrumentation:1.0.3'
     }

@@ -109,7 +109,7 @@ dependencies {
         implementation 'com.android.support:support-compat:26.0.2'
     }
     if (linkGooglePlay) {
-		implementation(project(":react-native-device-info"),  {
+		implementation(project(":app"),  {
 		  exclude group: "com.google.android.gms", group: "com.google.firebase"
 		})
         implementation 'com.google.firebase:firebase-messaging:21.1.0'

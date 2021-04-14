@@ -109,7 +109,7 @@ dependencies {
         implementation 'com.android.support:support-compat:26.0.2'
     }
     if (linkGooglePlay) {
-        implementation 'com.google.firebase:firebase-messaging:18.0.0'
+        implementation 'com.google.firebase:firebase-messaging:10.2.1'
         implementation 'com.google.android.gms:play-services-location:10.2.1'
         implementation 'com.google.android.gms:play-services-gcm:10.2.1'
         implementation 'com.android.support:multidex:1.0.3'

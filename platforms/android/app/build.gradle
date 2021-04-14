@@ -110,7 +110,7 @@ dependencies {
     }
     if (linkGooglePlay) {
 		implementation(project(":app"),  {
-		  exclude group: "com.google.android.gms", group: "com.google.firebase"
+		  exclude group: "com.google.firebase"
 		})
         implementation 'com.google.firebase:firebase-messaging:21.1.0'
         implementation 'com.google.android.gms:play-services-location:18.0.0'

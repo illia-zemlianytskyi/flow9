@@ -9,7 +9,7 @@ def doIncludeSigning =  project.hasProperty('key.store') && project.hasProperty(
                         project.hasProperty('key.alias') && project.hasProperty('key.alias.password')
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
 
     defaultConfig {
         applicationId PACKAGE_ID
@@ -109,9 +109,10 @@ dependencies {
         implementation 'com.android.support:support-compat:26.0.2'
     }
     if (linkGooglePlay) {
-        implementation 'com.google.firebase:firebase-messaging:18.0.0'
+        implementation 'com.google.firebase:firebase-messaging:21.1.0'
         implementation 'com.google.android.gms:play-services-location:18.0.0'
         implementation 'com.google.android.gms:play-services-gcm:17.0.0'
+        implementation 'com.google.firebase:firebase-core:18.0.3'
         implementation 'com.android.support:multidex:1.0.3'
         implementation 'com.android.support:multidex-instrumentation:1.0.3'
     }

@@ -89,6 +89,9 @@ export {
 		DDuration(days : int, hours : int, minutes : int, seconds : double);
 		DNull();
 
+		dBoolTrue = DBool(true);
+		dBoolFalse = DBool(false);
+
 	DExpression ::= DResourceValue, DBinaryExpression, DComparison, DLogicalExp, DBuiltIn, DCount, DPropertyOrFunction;
 		DPropertyOrFunction ::= DPropertyU, DFunction;
 		DPropertyU ::= DProperty, DProperty2;
@@ -411,7 +414,7 @@ makeODataBind(fieldName : string, resourceName : string, value : Json) -> Pair<s
 json2ResourceValue(json : Json) -> DResourceValue {
 	switch (json) {
 		JsonNull(): DNull();
-		JsonBool(v): DBool(v);
+		JsonBool(v): if (v) dBoolTrue else dBoolFalse;
 		JsonString(s): DString(s);
 		JsonDouble(v): {
 			intV = trunc(v);

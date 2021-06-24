@@ -1136,6 +1136,9 @@ RenderLine(
 	if (formAndStaticWidthP.second != [] && isUrlParameterTrue("new")) {
 		// in case there are elements with some kind of fillers in the line we should spread all available equally between them
 		// or they will break arangement because will fill entire available width each
+
+		// TODO: we can't rely on cons metrics to find the elements that might behave likes fillers.
+		// sometime, even texts will have such metrics. loosk like this can't be easely solved
 		textsWidthAndDynamicCount = fold(info.optimizedLine, Pair(0.0, 0), \acc, e : OptimizedLineElement -> {
 			if (isConst(e.metrics)) {
 				// element has static metrics, count it's width

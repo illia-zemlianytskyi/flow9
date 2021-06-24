@@ -362,7 +362,11 @@ renderParagraphEx(
 			);
 			switch (word.ghosted : Ghosted) {
 				Empty(): None();
-				Ghost(x, y, f, awB): Some(Translate(x, y, applyStyles(OverrideAvailableWidthB(awB, f))));
+				Ghost(x, y, f, awB): {
+					Some(Translate(x, y, applyStyles(
+						if (isUrlParameterTrue("new")) OverrideAvailableWidthB(awB, f) else f
+					)));
+				}
 				InspectGhost(inspector, f): Some(Translate(inspector.x, inspector.y, applyStyles(f)));
 				CoordinateInspectElement(__, __): None();
 			}

@@ -70,7 +70,7 @@ ParaAtomic ::= Form, ParaOneWord, TextElement, InteractiveParaAtomic;
 	InteractiveParaAtomic(elem : ParaAtomic, interactivityId : int);
 
 GhostForm ::= Form, Ghosted; // It is important that GhostForm is a super type of Ghosted
-	Ghost(xc : DynamicBehaviour<double>, yc : DynamicBehaviour<double>, form : Form);
+	Ghost(xc : DynamicBehaviour<double>, yc : DynamicBehaviour<double>, form : Form, awB : DynamicBehaviour<double>);
 
 // For dynamic elements, we use a ghost to allow reuse of the physical forms
 Ghosted ::= Empty, Ghost, CoordinateInspectElement, InspectGhost;
@@ -188,7 +188,7 @@ getWordForm = \word1, pos -> {
 	g = word1.ghosted;
 	switch (g: Ghosted) {
 		Empty(): extractParaAtomicForm(word1, pos);
-		Ghost(xc, yc, f): f;
+		Ghost(xc, yc, f, __): f;
 		InspectGhost(__, f): f;
 		CoordinateInspectElement(__, f): f;
 	};
@@ -206,7 +206,7 @@ makeParaWord2(word2 : ParaWord, form2 : Form, pos : int) -> ParaWord {
 	replaceWordGhosted = \ -> {
 		switch (g : Ghosted) {
 			Empty(): Empty();
-			Ghost(xc, yc, __): Ghost(xc, yc, form2);
+			Ghost(xc, yc, __, awB): Ghost(xc, yc, form2, awB);
 			InspectGhost(inspector, __): InspectGhost(inspector, form2);
 			CoordinateInspectElement(inspector, __): CoordinateInspectElement(inspector, form2);
 		}
@@ -298,7 +298,7 @@ renderParagraphEx(
 		g = word1.ghosted;
 		switch (g : Ghosted) {
 			Empty(): extractParaAtomicForm(word1, pos);
-			Ghost(xc, yc, fm): g;
+			Ghost(xc, yc, fm, __): g;
 			InspectGhost(__, fm): g;
 			CoordinateInspectElement(__, __): g;
 		}
@@ -362,7 +362,7 @@ renderParagraphEx(
 			);
 			switch (word.ghosted : Ghosted) {
 				Empty(): None();
-				Ghost(x, y, f): Some(Translate(x, y, applyStyles(f)));
+				Ghost(x, y, f, awB): Some(Translate(x, y, applyStyles(OverrideAvailableWidthB(awB, f))));
 				InspectGhost(inspector, f): Some(Translate(inspector.x, inspector.y, applyStyles(f)));
 				CoordinateInspectElement(__, __): None();
 			}
@@ -588,7 +588,7 @@ makeInteractiveParaWord(
 		} else {
 			x = make(0.0);
 			y = make(0.0);
-			ParaWord(Empty(), s.second, Ghost(x, y, s.first), Empty(), interactivityIdM);
+			ParaWord(Empty(), s.second, Ghost(x, y, s.first, make(0.0)), Empty(), interactivityIdM);
 		}
 	}
 	switch (w : ParaAtomic) {
@@ -818,12 +818,12 @@ reflowParaWords2(
 								fselect(w.metrics, FLift(\fm -> FormMetrics(fm.width*textScale, fm.height*textScale, fm.baseline*textScale, fm.dHeight*textScale))),
 								switch (w.ghosted : Ghosted) {
 									Empty(): Empty();
-									Ghost(x, y, f): Ghost(x, y, scale(f));
+									Ghost(x, y, f, awB): Ghost(x, y, scale(f), awB);
 									InspectGhost(inspector, f): InspectGhost(inspector, scale(f));
 									CoordinateInspectElement(i, f): CoordinateInspectElement(i, scale(f));
 								},
 								switch (wform) {
-									Ghost(xc, yc, form): Ghost(xc, yc, scale(form));
+									Ghost(xc, yc, form, awB): Ghost(xc, yc, scale(form), awB);
 									CoordinateInspectElement(inspector, form): CoordinateInspectElement(inspector, scale(form));
 									InspectGhost(inspector, form): InspectGhost(inspector, scale(form));
 									Form(): scale(wform);
@@ -1039,8 +1039,12 @@ RenderLine(
 
 	justifyExtraWidth = ref 0.0;
 
-	// The width and the individual forms
-	lo : [Form] = filtermapi(info.optimizedLine, \i : int, elem : OptimizedLineElement -> {
+	// pair of all forms and total width of all static elements
+	formAndStaticWidthP : Pair<[Form], [DynamicBehaviour]> = foldi(
+		info.optimizedLine,
+		Pair([], []),
+		\i : int, acc : Pair<[Form], [DynamicBehaviour]>, elem : OptimizedLineElement ->
+	{
 		f = elem.f;
 		m = fgetValue(elem.metrics);
 		intStyleContains = \st : ParaElementInteractiveStyle -> eitherMap(
@@ -1058,7 +1062,7 @@ RenderLine(
 		dy = if (isSuperscript) {
 			if (i == 0) -1.0 else info.lineAsc - m.baseline - fgetValue(info.optimizedLine[i - 1].metrics).height * 0.25
 		} else info.lineAsc - m.baseline / (if (isSubscript) 2.0 else 1.0);
-		applyStylesAndOffset = \fm : Form -> eitherMap(
+		applyStylesAndOffset : (Form) -> Form = \fm : Form -> eitherMap(
 			elem.interactivityIdM,
 			\id -> applyIntStylesAndHighlighting(
 				fm,
@@ -1078,11 +1082,14 @@ RenderLine(
 		justifyOffset = if (isMarked && i == 0 && lineNumber == 0) 0.0 else interWord;
 
 		r = switch (f : GhostForm) {
-			Empty(): None();
-			Ghost(xc, yc, fm): {
+			Empty(): acc;
+			Ghost(xc, yc, fm, awB): {
 				nextDistinct(xc, ^alignmentOffset);
 				nextDistinct(yc, y + dy);
-				Some(applyStylesAndOffset(Empty()));
+				Pair(
+					arrayPush(acc.first, applyStylesAndOffset(Empty())),
+					arrayPush(acc.second, awB)
+				)
 			}
 			InspectGhost(inspector, fm): {
 				nextDistinct(inspector.x, ^alignmentOffset);
@@ -1090,7 +1097,10 @@ RenderLine(
 				nextDistinct(inspector.size, WidthHeight(m.width, m.height));
 				nextDistinct(inspector.lineHeight, info.lineHeight);
 				nextDistinct(inspector.lineNumber, lineNumber);
-				Some(applyStylesAndOffset(Empty()));
+				Pair(
+					arrayPush(acc.first, applyStylesAndOffset(Empty())),
+					acc.second
+				)
 			}
 			CoordinateInspectElement(inspector, fm): {
 				fo = applyStylesAndOffset(fm);
@@ -1099,9 +1109,17 @@ RenderLine(
 				nextDistinct(inspector.size, WidthHeight(m.width, m.height));
 				nextDistinct(inspector.lineHeight, info.lineHeight);
 				nextDistinct(inspector.lineNumber, lineNumber);
-				Some(fo);
+				Pair(
+					arrayPush(acc.first, fo),
+					acc.second
+				)
 			}
-			default: Some(applyStylesAndOffset(cast(f : GhostForm -> Form)))
+			default: {
+				Pair(
+					arrayPush(acc.first, applyStylesAndOffset(cast(f : GhostForm -> Form))),
+					acc.second
+				)
+			}
 		}
 
 		if (m.width != 0.0 && !intStyleContains(IgnoreMetrics())) {
@@ -1110,8 +1128,25 @@ RenderLine(
 		}
 		r
 	});
+
+	if (formAndStaticWidthP.second != [] && isUrlParameterTrue("new")) {
+		// in case there are elements with some kind of fillers in the line we should spread all available equally between them
+		// or they will break arangement because will fill entire available width each
+		textsWidthAndDynamicCount = fold(info.optimizedLine, Pair(0.0, 0), \acc, e : OptimizedLineElement -> {
+			if (isConst(e.metrics)) {
+				// element has static metrics, count it's width
+				Pair(acc.first + getValue(e.metrics).width, acc.second)
+			} else {
+				// it is dynamic, we count it and will spread all remaining equally
+				Pair(acc.first, acc.second + 1)
+			}
+		});
+		awForFillers = if (textsWidthAndDynamicCount.second == 0) width else (width - textsWidthAndDynamicCount.first - ^justifyExtraWidth) / i2d(textsWidthAndDynamicCount.second);
+		iter(formAndStaticWidthP.second, \awB -> nextDistinct(awB, awForFillers));
+	}
+
 	ParaLineResult(
-		Group(lo),
+		Group(formAndStaticWidthP.first),
 		info.lineWidth + ^justifyExtraWidth,
 		info.lineHeight,
 		y + info.lineAsc
@@ -1293,7 +1328,7 @@ getWordText(w: ParaWord) -> string {
 		Text(t, __): t;
 		Empty(): switch (w.form) {
 			InspectGhost(__, form): getFormText(form);
-			Ghost(__, __, form): getFormText(form);
+			Ghost(__, __, form, __): getFormText(form);
 			default: "";
 		};
 		default: "";
